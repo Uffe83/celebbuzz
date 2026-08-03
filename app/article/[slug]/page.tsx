@@ -79,8 +79,8 @@ const { data: relatedArticles } = await supabase
     Relaterade artiklar
   </h2>
 
-  <div className="grid gap-6 md:grid-cols-2">
-    {relatedArticles.map((item) => (
+<div className="grid gap-6 md:grid-cols-2">
+  {relatedArticles?.map((item) => (
       <Link key={item.slug} href={`/article/${item.slug}`}>
         <article className="overflow-hidden rounded-2xl bg-zinc-900 transition hover:bg-zinc-800">
           <Image
