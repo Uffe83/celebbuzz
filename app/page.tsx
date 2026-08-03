@@ -1,10 +1,28 @@
 import Image from "next/image";
 import Link from "next/link";
 import Header from "./components/Header";
-import { articles } from "./data/articles";
+import { supabase } from "../lib/supabase";
 
-export default function Home() {
-  const heroArticle = articles[0];
+export default async function Home() {
+const { data: articles, error } = await supabase
+  .from("articles")
+  .select("*")
+.order("created_at", { ascending: false });
+  if (error) {
+    console.error(error);
+    return <div>Kunde inte hämta artiklar.</div>;
+  }
+
+if (!articles || articles.length === 0) {
+  return (
+    <main className="p-10 text-white">
+      Inga artiklar ännu.
+    </main>
+  );
+}
+
+const heroArticle = articles[0];
+
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
 
@@ -26,7 +44,7 @@ export default function Home() {
 </h2>
 
           <p className="max-w-2xl text-zinc-400">
-  {heroArticle.content}
+{heroArticle.content?.slice(0, 180)}...
 </p>
         <div className="mt-8 overflow-hidden rounded-3xl">
   <Image
@@ -53,18 +71,22 @@ export default function Home() {
     key={article.slug}
 href={`/article/${article.slug}`}
   >
-    <article className="rounded-2xl bg-zinc-900 p-6 transition hover:scale-105 hover:bg-zinc-800 cursor-pointer">
+    <article className="overflow-hidden rounded-2xl bg-zinc-900 shadow-lg transition duration-300 hover:-translate-y-2 hover:shadow-2xl hover:bg-zinc-800 p-6">
             
               <Image
   src={article.image}
   alt={article.title}
   width={500}
   height={300}
-  className="mb-4 h-40 w-full rounded-xl object-cover"
+  className="h-52 w-full object-cover transition duration-300 hover:scale-105"
 />
 
 <p className="mb-2 text-sm uppercase text-pink-400">
   {article.category}
+</p>
+
+<p className="mb-3 text-xs text-zinc-500">
+  {article.date}
 </p>
 
 <h4 className="mb-2 text-xl font-semibold">
@@ -72,7 +94,11 @@ href={`/article/${article.slug}`}
 </h4>
 
 <p className="text-zinc-400">
-  {article.content}
+{article.content?.slice(0, 100)}...
+</p>
+
+<p className="mt-5 font-semibold text-pink-400">
+  Läs mer →
 </p>
 
 </article>
@@ -82,7 +108,7 @@ href={`/article/${article.slug}`}
 </section>
 
       <footer className="border-t border-zinc-800 p-8 text-center text-zinc-500">
-        © 2026 CelebBuzz
+        © 2026 CelebBuzz · Alla rättigheter förbehållna.
       </footer>
 
     </main>
