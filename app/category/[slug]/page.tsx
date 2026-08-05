@@ -1,4 +1,4 @@
-import { articles } from "@/app/data/articles";
+import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import Link from "next/link";
 export default async function CategoryPage({
@@ -7,10 +7,10 @@ export default async function CategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const allArticles = articles;
-  const filteredArticles = allArticles.filter(
-  (article) => article.category.toLowerCase() === slug
-);
+const { data: filteredArticles } = await supabase
+  .from("articles")
+  .select("*")
+  .ilike("category", slug);
 
 return (
   <main className="mx-auto max-w-6xl px-6 py-12">
