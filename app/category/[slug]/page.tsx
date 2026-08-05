@@ -18,7 +18,7 @@ return (
       {slug}
     </h1>
 
-    {filteredArticles.map((article) => (
+{filteredArticles?.map((article) => (
       <Link
         key={article.slug}
         href={`/article/${article.slug}`}

@@ -58,7 +58,12 @@ Regler:
 - slug = små bokstäver och bindestreck
 - category = ${category}
 - image = alltid "/images/test.jpg"
-- content = cirka 150 ord
+- content = cirka 200–300 ord
+- dela upp texten i 4–6 stycken
+- separera varje stycke med \n\n
+- skriv som en svensk nöjesjournalist
+- börja med den viktigaste informationen
+- använd ett naturligt språk
 - inget annat än JSON
 - använd INTE markdown
 - börja direkt med {
@@ -83,6 +88,14 @@ Regler:
   const generatedArticle = JSON.parse(cleaned);
 
   const rssArticle = article as any;
+
+console.log("===== Bildfält =====");
+console.log("enclosure:", rssArticle.enclosure);
+console.log("media:content:", rssArticle["media:content"]);
+console.log("media:thumbnail:", rssArticle["media:thumbnail"]);
+console.log("image:", rssArticle.image);
+console.log("itunes:", rssArticle.itunes);
+console.log("====================");
 
   console.log(rssArticle);
 
@@ -139,11 +152,16 @@ export async function GET() {
 
       const feed = await parser.parseURL(feedInfo.url);
 
-      const latestArticle = feed.items[0];
+const latestArticles = feed.items.slice(0, 10);
 
-      if (latestArticle) {
-        await generateArticle(latestArticle, feedInfo.category);
-      }
+for (const article of latestArticles) {
+  try {
+    await generateArticle(article, feedInfo.category);
+  } catch (error) {
+    console.error("Kunde inte importera artikel:", article.title);
+    console.error(error);
+  }
+}
     }
 
     console.log("Alla feeds klara.");

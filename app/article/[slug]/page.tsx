@@ -19,8 +19,10 @@ const { data: article } = await supabase
 const { data: relatedArticles } = await supabase
   .from("articles")
   .select("*")
+  .eq("category", article?.category)
   .neq("slug", slug)
-  .limit(2);
+  .order("created_at", { ascending: false })
+  .limit(3);
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
@@ -41,13 +43,13 @@ const { data: relatedArticles } = await supabase
           {article?.title}
         </h1>
 
-        <p className="mb-8 text-zinc-400">
-  {article?.date}
-</p>
-
-<p className="mb-8 text-sm text-zinc-500">
-  Av CelebBuzz Redaktion
-</p>
+<div className="mb-8 flex flex-wrap items-center gap-4 text-sm text-zinc-400">
+  <span>📅 {article?.date}</span>
+  <span>•</span>
+  <span>👤 CelebBuzz Redaktion</span>
+  <span>•</span>
+  <span>⏱️ 3 min läsning</span>
+</div>
 
         <div className="mb-10 overflow-hidden rounded-3xl">
   <Image
@@ -59,21 +61,15 @@ const { data: relatedArticles } = await supabase
   />
 </div>
 
-<p className="mb-10 text-2xl font-light leading-10 text-zinc-200">
-  {article?.content}
-</p>
+<div className="mb-10 space-y-8 text-xl leading-10 text-zinc-300">
+  {article?.content
+    ?.split("\n\n")
+    .map((paragraph: string, index: number) => (
+      <p key={index}>{paragraph}</p>
+    ))}
+</div>
 
-  <article className="mx-auto max-w-3xl space-y-8 text-xl leading-10 text-zinc-300">
-  <p>
-    Hollywoodstjärnan fortsätter att vara en av branschens mest eftertraktade skådespelare.
-    Den nya produktionen väntas bli en av årets största filmsatsningar och inspelningen
-    påbörjas senare under året.
-  </p>
-
-  <p>
-    Senare kommer AI automatiskt att skriva texten och databasen kommer att hämta innehållet.
-  </p>
-</article>
+  
 <section className="mt-20">
   <h2 className="mb-8 text-3xl font-bold">
     Relaterade artiklar
