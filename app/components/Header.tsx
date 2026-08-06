@@ -18,8 +18,16 @@ export default function Header() {
         </Link>
 
         <nav className="hidden gap-8 text-sm font-semibold uppercase tracking-wide text-zinc-300 md:flex">
-<Link href="/category/hollywood" className="hover:text-pink-400 transition">
-  Hollywood
+<Link href="/category/kandisar" className="hover:text-pink-400 transition">
+  Kändisar
+</Link>
+
+<Link href="/category/film" className="hover:text-pink-400 transition">
+  Film
+</Link>
+
+<Link href="/category/tv-streaming" className="hover:text-pink-400 transition">
+  TV & Streaming
 </Link>
 
 <Link href="/category/musik" className="hover:text-pink-400 transition">
@@ -32,10 +40,6 @@ export default function Header() {
 
 <Link href="/category/reality" className="hover:text-pink-400 transition">
   Reality
-</Link>
-
-<Link href="/category/tv" className="hover:text-pink-400 transition">
-  TV
 </Link>
         </nav>
 

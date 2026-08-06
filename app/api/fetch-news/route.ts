@@ -13,13 +13,12 @@ const openai = new OpenAI({
 });
 
 async function generateArticle(
-  article: Parser.Item,
-  category: string
+  article: Parser.Item
 ) {
   console.log("==================================");
   console.log("Genererar artikel:");
   console.log(article.title);
-  console.log("Kategori:", category);
+console.log("AI väljer kategori automatiskt");
 
   console.log("Skickar till OpenRouter...");
 
@@ -46,17 +45,25 @@ Format:
 {
   "title":"...",
   "slug":"...",
-  "category":"${category}",
+  "category":"...",
   "image":"/images/test.jpg",
   "content":"...",
   "date":"31 juli 2026"
 }
+Kategori måste vara EN av dessa:
+
+- Nöje
+- Film
+- TV & Streaming
+- Musik
+- Kungligt
+
+Välj den kategori som passar artikeln bäst.  
 
 Regler:
 
 - title = lockande rubrik
 - slug = små bokstäver och bindestreck
-- category = ${category}
 - image = alltid "/images/test.jpg"
 - content = cirka 200–300 ord
 - dela upp texten i 4–6 stycken
@@ -106,7 +113,6 @@ console.log("====================");
     "/images/test.jpg";
 
   generatedArticle.image = image;
-  generatedArticle.category = category;
   generatedArticle.source_url = article.link;
 
   const { data: existingArticle } = await supabase
@@ -148,7 +154,7 @@ export async function GET() {
 
     for (const feedInfo of feeds) {
       console.log("--------------------------------");
-      console.log("Läser RSS:", feedInfo.url);
+      console.log("Läser RSS:", feedInfo.name);
 
       const feed = await parser.parseURL(feedInfo.url);
 
@@ -156,7 +162,7 @@ const latestArticles = feed.items.slice(0, 10);
 
 for (const article of latestArticles) {
   try {
-    await generateArticle(article, feedInfo.category);
+  await generateArticle(article);
   } catch (error) {
     console.error("Kunde inte importera artikel:", article.title);
     console.error(error);

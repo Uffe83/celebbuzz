@@ -35,16 +35,26 @@ const heroArticle = articles[0];
 <section className="mx-auto max-w-6xl p-8">
   <Link href={`/article/${heroArticle.slug}`}>
     <div className="rounded-3xl bg-zinc-900 p-12 transition hover:bg-zinc-800 cursor-pointer">
-          <p className="mb-2 uppercase text-pink-400">
-            {heroArticle.category}
-          </p>
+<div className="mb-4 flex items-center gap-3">
+  <span className="rounded-full bg-pink-500 px-3 py-1 text-xs font-bold uppercase text-white">
+    BREAKING
+  </span>
+
+  <span className="text-sm font-semibold uppercase tracking-widest text-pink-400">
+    {heroArticle.category}
+  </span>
+</div>
 
           <h2 className="mb-4 text-6xl font-extrabold">
   {heroArticle.title}
 </h2>
 
-          <p className="max-w-2xl text-zinc-400">
-{heroArticle.content?.slice(0, 180)}...
+<p className="max-w-2xl text-zinc-400">
+  {heroArticle.content?.slice(0, 180)}...
+</p>
+
+<p className="mt-6 text-sm text-zinc-500">
+  📅 {heroArticle.date} • 👤 CelebBuzz Redaktion
 </p>
         <div className="mt-8 overflow-hidden rounded-3xl">
   <Image
@@ -60,10 +70,44 @@ const heroArticle = articles[0];
 </Link>
       </section>
 
+      <section className="mx-auto max-w-7xl px-8 pb-8">
+  <div className="rounded-2xl bg-zinc-900 p-6">
+    <h3 className="mb-5 flex items-center gap-2 text-2xl font-bold">
+      🔥 Trendar nu
+    </h3>
+
+    <div className="grid gap-4 md:grid-cols-4">
+      {articles.slice(0, 4).map((article, index) => (
+        <Link
+          key={article.slug}
+          href={`/article/${article.slug}`}
+          className="group"
+        >
+          <div className="flex gap-4">
+            <span className="text-3xl font-black text-pink-500">
+              {index + 1}
+            </span>
+
+            <div>
+              <p className="mb-1 text-xs uppercase text-pink-400">
+                {article.category}
+              </p>
+
+              <p className="font-semibold transition group-hover:text-pink-400">
+                {article.title}
+              </p>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  </div>
+</section>
+
       <section className="mx-auto max-w-7xl p-8">
-        <h3 className="mb-6 text-3xl font-bold">
-          Senaste Nyheter
-        </h3>
+<h3 className="mb-6 flex items-center gap-2 text-3xl font-bold">
+  📰 Senaste Nyheter
+</h3>
 
         <div className="grid gap-6 md:grid-cols-3">
 {articles.slice(1).map((article) => (
