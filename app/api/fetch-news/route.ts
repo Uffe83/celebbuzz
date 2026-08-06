@@ -46,6 +46,9 @@ Format:
   "title":"...",
   "slug":"...",
   "category":"...",
+  "priority":95,
+  "excerpt":"...",
+  "readingTime":3,
   "image":"/images/test.jpg",
   "content":"...",
   "date":"31 juli 2026"
@@ -65,6 +68,11 @@ Regler:
 - title = lockande rubrik
 - slug = små bokstäver och bindestreck
 - image = alltid "/images/test.jpg"
+- priority = ett heltal mellan 1 och 100 där 100 är dagens största nyhet
+
+- excerpt = skriv en lockande ingress på 20–30 ord som sammanfattar artikeln
+
+- readingTime = uppskattad lästid i minuter
 - content = cirka 200–300 ord
 - dela upp texten i 4–6 stycken
 - separera varje stycke med \n\n
@@ -94,6 +102,10 @@ Regler:
 
   const generatedArticle = JSON.parse(cleaned);
 
+ console.log("=== AI JSON ===");
+console.log(generatedArticle);
+console.log("================"); 
+
   const rssArticle = article as any;
 
 console.log("===== Bildfält =====");
@@ -114,6 +126,9 @@ console.log("====================");
 
   generatedArticle.image = image;
   generatedArticle.source_url = article.link;
+
+  generatedArticle.reading_time = generatedArticle.readingTime;
+delete generatedArticle.readingTime;
 
   const { data: existingArticle } = await supabase
     .from("articles")

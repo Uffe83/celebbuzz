@@ -7,7 +7,8 @@ export default async function Home() {
 const { data: articles, error } = await supabase
   .from("articles")
   .select("*")
-.order("created_at", { ascending: false });
+  .order("priority", { ascending: false })
+  .order("created_at", { ascending: false });
   if (error) {
     console.error(error);
     return <div>Kunde inte hämta artiklar.</div>;
@@ -21,7 +22,9 @@ if (!articles || articles.length === 0) {
   );
 }
 
-const heroArticle = articles[0];
+const heroArticle = [...articles].sort(
+  (a, b) => (b.priority ?? 0) - (a.priority ?? 0)
+)[0];
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
@@ -32,43 +35,59 @@ const heroArticle = articles[0];
         🔥 BREAKING NEWS
       </section>
 
-<section className="mx-auto max-w-6xl p-8">
+<section className="mx-auto max-w-7xl p-8">
   <Link href={`/article/${heroArticle.slug}`}>
-    <div className="rounded-3xl bg-zinc-900 p-12 transition hover:bg-zinc-800 cursor-pointer">
-<div className="mb-4 flex items-center gap-3">
-  <span className="rounded-full bg-pink-500 px-3 py-1 text-xs font-bold uppercase text-white">
-    BREAKING
-  </span>
+    <div className="rounded-3xl bg-zinc-900 p-16 transition hover:bg-zinc-800 cursor-pointer">
 
-  <span className="text-sm font-semibold uppercase tracking-widest text-pink-400">
-    {heroArticle.category}
-  </span>
-</div>
+      <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
 
-          <h2 className="mb-4 text-6xl font-extrabold">
-  {heroArticle.title}
-</h2>
+        {/* Vänster kolumn */}
+        <div>
+          <div className="mb-4 flex items-center gap-3">
+            <span className="rounded-full bg-pink-500 px-3 py-1 text-xs font-bold uppercase text-white">
+              BREAKING
+            </span>
 
-<p className="max-w-2xl text-zinc-400">
-  {heroArticle.content?.slice(0, 180)}...
-</p>
+            <span className="text-sm font-semibold uppercase tracking-widest text-pink-400">
+              {heroArticle.category}
+            </span>
+          </div>
 
-<p className="mt-6 text-sm text-zinc-500">
-  📅 {heroArticle.date} • 👤 CelebBuzz Redaktion
-</p>
-        <div className="mt-8 overflow-hidden rounded-3xl">
-  <Image
-    src={heroArticle.image}
-    alt={heroArticle.title}
-    width={1200}
-    height={700}
-    className="w-full h-auto rounded-3xl"
-  />
-</div>
+          <h2 className="mb-6 text-4xl lg:text-6xl xl:text-7xl font-extrabold leading-none">
+            {heroArticle.title}
+          </h2>
 
-</div>
-</Link>
-      </section>
+          <p className="mb-8 max-w-2xl text-xl leading-8 text-zinc-300">
+            {heroArticle.excerpt}
+          </p>
+
+          <p className="text-sm text-zinc-500">
+            📅 {heroArticle.date}
+            {" • "}
+            ⏱ {heroArticle.reading_time} min läsning
+            {" • "}
+            👤 CelebBuzz Redaktion
+          </p>
+        </div>
+
+        {/* Höger kolumn */}
+        <div className="relative overflow-hidden rounded-3xl">
+          <Image
+            src={heroArticle.image}
+            alt={heroArticle.title}
+            width={1200}
+            height={700}
+            className="h-[600px] w-full rounded-3xl object-cover shadow-2xl"
+          />
+
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+        </div>
+
+      </div>
+
+    </div>
+  </Link>
+</section>
 
       <section className="mx-auto max-w-7xl px-8 pb-8">
   <div className="rounded-2xl bg-zinc-900 p-6">
@@ -76,11 +95,14 @@ const heroArticle = articles[0];
       🔥 Trendar nu
     </h3>
 
-    <div className="grid gap-4 md:grid-cols-4">
-      {articles.slice(0, 4).map((article, index) => (
-        <Link
-          key={article.slug}
-          href={`/article/${article.slug}`}
+<div className="grid gap-4 md:grid-cols-4">
+  {[...articles]
+    .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+    .slice(0, 4)
+    .map((article, index) => (
+      <Link
+        key={article.slug}
+        href={`/article/${article.slug}`}
           className="group"
         >
           <div className="flex gap-4">
@@ -130,7 +152,7 @@ href={`/article/${article.slug}`}
 </p>
 
 <p className="mb-3 text-xs text-zinc-500">
-  {article.date}
+  📅 {article.date} • ⏱ {article.reading_time} min
 </p>
 
 <h4 className="mb-2 text-xl font-semibold">
@@ -138,7 +160,7 @@ href={`/article/${article.slug}`}
 </h4>
 
 <p className="text-zinc-400">
-{article.content?.slice(0, 100)}...
+  {article.excerpt}
 </p>
 
 <p className="mt-5 font-semibold text-pink-400">
