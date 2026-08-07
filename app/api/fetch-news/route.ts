@@ -28,9 +28,19 @@ console.log("AI väljer kategori automatiskt");
       {
         role: "user",
         content: `
-Du är journalist på Sveriges största nöjessajt.
+Du är chefredaktör på Sveriges största digitala nöjessajt.
 
-Skriv om denna nyhet till en svensk nöjesartikel.
+Ditt uppdrag är att skriva en professionell svensk nöjesartikel OCH fatta samma redaktionella beslut som en erfaren chefredaktör.
+
+Du ska bedöma:
+
+- hur viktig nyheten är
+- hur stort allmänintresset är
+- hur känt ämnet eller personen är
+- hur aktuell nyheten är
+- hur stor sannolikheten är att många klickar på artikeln
+
+Skriv sedan artikeln.
 
 Titel:
 ${article.title}
@@ -61,16 +71,67 @@ Kategori måste vara EN av dessa:
 - Musik
 - Kungligt
 
-Välj den kategori som passar artikeln bäst.  
+Välj alltid den mest specifika kategorin.
+
+Exempel:
+- Filmpremiärer, skådespelare och regissörer → Film
+- TV-serier och streamingtjänster → TV & Streaming
+- Artister, konserter och album → Musik
+- Kungahus → Kungligt
+
+Använd endast "Nöje" om ingen annan kategori passar bättre.
 
 Regler:
 
 - title = lockande rubrik
 - slug = små bokstäver och bindestreck
 - image = alltid "/images/test.jpg"
-- priority = ett heltal mellan 1 och 100 där 100 är dagens största nyhet
+- priority = ett heltal mellan 1 och 100.
+
+Bedöm nyhetsvärdet som en erfaren chefredaktör.
+
+Sätt inte en hög priority enbart för att personen är känd.
+
+Bedöm istället den faktiska nyhetens betydelse, genomslag och sannolika intresse för läsarna.
+
+En liten notis om en världskändis kan ha lägre prioritet än en mycket stor nyhet om en mindre känd person.
+
+Tänk på:
+
+- Hur känt ämnet eller personen är.
+- Hur många människor som sannolikt kommer att vara intresserade.
+- Om nyheten är internationellt uppmärksammad.
+- Om nyheten är oväntad eller mycket aktuell.
+- Om nyheten sannolikt kommer att delas mycket i sociala medier.
+- Om nyheten skulle kunna vara huvudrubrik på en stor nöjessajt.
+
+Använd denna skala:
+
+100 = Exceptionellt stor global nöjesnyhet.
+Exempel:
+- Stora dödsfall
+- Oscarsgalan
+- Taylor Swift
+- Brad Pitt
+- Beyoncé
+- Kungliga familjer
+- Netflix största premiärer
+- Globala skandaler
+
+90–99 = Mycket stor internationell nöjesnyhet.
+
+70–89 = Viktig nöjesnyhet.
+
+40–69 = Normal nöjesnyhet.
+
+1–39 = Smal nyhet med begränsat intresse.
+
+Använd hela skalan.
+Ge inte automatiskt höga poäng.
+Bara ett fåtal artiklar ska få 95–100.
 
 - excerpt = skriv en lockande ingress på 20–30 ord som sammanfattar artikeln
+
 
 - readingTime = uppskattad lästid i minuter
 - content = cirka 200–300 ord
