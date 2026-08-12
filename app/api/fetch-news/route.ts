@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { feeds } from "@/lib/rss-feeds";
 import Parser from "rss-parser";
 import OpenAI from "openai";
+import { createClient } from "@supabase/supabase-js";
 
 const parser = new Parser({
   timeout: 10000,
@@ -12,9 +13,132 @@ const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SECRET_KEY!,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  }
+);
+
+async function testStorage() {
+
+
+  const { data, error } = await supabaseAdmin.storage
+    .from("article-images")
+    .list();
+
+
+  if (error) {
+    console.error("❌ Storage-test misslyckades:", error);
+    return false;
+  }
+
+  console.log("✅ Storage fungerar!");
+  console.log("Filer:", data);
+
+  return true;
+}
+
+async function generateImage(imagePrompt: string, slug: string) {
+  console.log("🎨 Testar AI-bildgenerering...");
+
+const prompt =
+  "Professional editorial entertainment image for a major Swedish entertainment news website. " +
+  imagePrompt +
+  " Cinematic lighting, premium magazine photography aesthetic, wide horizontal composition, " +
+  "realistic details, no identifiable person, no text, no logos, no watermark.";
+
+  const response = await fetch(
+    "https://openrouter.ai/api/v1/images",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3.1-flash-image",
+        prompt,
+        aspect_ratio: "16:9",
+        output_format: "png",
+      }),
+    }
+  );
+
+const result = await response.json();
+
+console.log("🎨 Bild-API status:", response.status);
+
+if (!response.ok) {
+  console.error("❌ Bildgenerering misslyckades:", result);
+  throw new Error("Bildgenerering misslyckades");
+}
+
+const base64Image = result.data?.[0]?.b64_json;
+
+if (!base64Image) {
+  console.error("❌ Ingen bilddata hittades:", result);
+  throw new Error("Ingen bilddata från bildgeneratorn");
+}
+
+const imageBuffer = Buffer.from(base64Image, "base64");
+
+console.log("🖼️ Bild mottagen!");
+console.log("📦 Bildstorlek:", imageBuffer.length, "bytes");
+
+const safeSlug = slug.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const filePath = `articles/${safeSlug}-${Date.now()}.png`;
+
+const { error: uploadError } = await supabaseAdmin.storage
+  .from("article-images")
+  .upload(filePath, imageBuffer, {
+    contentType: "image/png",
+    upsert: true,
+  });
+
+if (uploadError) {
+  console.error("❌ Kunde inte ladda upp bilden:", uploadError);
+  throw uploadError;
+}
+
+const { data: publicUrlData } = supabaseAdmin.storage
+  .from("article-images")
+  .getPublicUrl(filePath);
+
+console.log("✅ Bild sparad i Supabase!");
+console.log("🖼️ Bild-URL:", publicUrlData.publicUrl);
+
+return {
+  success: true,
+  imagePath: filePath,
+  imageUrl: publicUrlData.publicUrl,
+};
+}
+
 async function generateArticle(
   article: Parser.Item
 ) {
+
+  const { data: existingArticle } = await supabase
+    .from("articles")
+    .select("id")
+    .eq("source_url", article.link)
+    .maybeSingle();
+
+  if (existingArticle) {
+    console.log("⏭️ Artikeln finns redan, hoppar över:", article.title);
+
+    return {
+      success: true,
+      skipped: true,
+    };
+  }
+
   console.log("==================================");
   console.log("Genererar artikel:");
   console.log(article.title);
@@ -59,7 +183,7 @@ Format:
   "priority":95,
   "excerpt":"...",
   "readingTime":3,
-  "image":"/images/test.jpg",
+  "imagePrompt":"...",
   "content":"...",
   "date":"31 juli 2026"
 }
@@ -85,7 +209,40 @@ Regler:
 
 - title = lockande rubrik
 - slug = små bokstäver och bindestreck
-- image = alltid "/images/test.jpg"
+- imagePrompt = skriv en detaljerad bildbeskrivning för en professionell redaktionell huvudbild som passar artikeln.
+
+Bildprompten ska:
+
+- vara direkt kopplad till artikelns viktigaste nyhet
+- tydligt spegla artikelns ämne, miljö, händelse eller känsla
+- fungera som huvudbild på en professionell svensk nöjessajt
+- kännas exklusiv, modern och journalistisk
+- ha en tydlig visuell idé och inte kännas som en generisk stockbild
+- bilden ska göra det möjligt att förstå artikelns huvudämne även utan att läsa rubriken
+- välj konkreta visuella element från artikeln framför abstrakta eller generiska symboler
+- anpassa bildidén efter artikeltypen: film, TV, musik, kungligt eller övrigt nöje
+- om artikeln handlar om ett specifikt verk, evenemang eller projekt ska bilden visuellt knyta an till just detta
+- prioritera en stark huvudscen framför många små detaljer
+- använda cinematisk ljussättning och professionell komposition när det passar ämnet
+- lämna tillräckligt med visuellt utrymme för att fungera som en bred webb-bild
+
+Om artikeln handlar om en verklig person:
+
+- skapa inte en fotorealistisk kopia eller porträttliknande avbildning av personen
+- använd istället en relevant miljö, situation, rekvisita eller symbolik kopplad till personen och nyheten
+- bilden ska inte ge intryck av att vara ett äkta pressfoto
+
+Skapa inte:
+
+- påhittade citat
+- tidningsrubriker
+- vattenstämplar
+- logotyper
+- text i bilden
+- generiska människor som bara representerar "en kändis"
+
+Bildprompten ska vara på engelska eftersom den ska skickas till bildgeneratorn.
+
 - priority = ett heltal mellan 1 och 100.
 
 Bedöm nyhetsvärdet som en erfaren chefredaktör.
@@ -161,9 +318,19 @@ Bara ett fåtal artiklar ska få 95–100.
     .replace(/```/g, "")
     .trim();
 
-  const generatedArticle = JSON.parse(cleaned);
+const generatedArticle = JSON.parse(cleaned);
 
- console.log("=== AI JSON ===");
+console.log("🎨 Genererar artikelbild från AI:ns imagePrompt...");
+
+const imageResult = await generateImage(
+  generatedArticle.imagePrompt,
+  generatedArticle.slug
+);
+
+generatedArticle.image = imageResult.imageUrl;
+
+console.log("=== AI JSON ===");
+
 console.log(generatedArticle);
 console.log("================"); 
 
@@ -185,26 +352,13 @@ console.log("====================");
     rssArticle["media:thumbnail"]?.url ||
     "/images/test.jpg";
 
-  generatedArticle.image = image;
+ 
   generatedArticle.source_url = article.link;
 
   generatedArticle.reading_time = generatedArticle.readingTime;
 delete generatedArticle.readingTime;
 
-  const { data: existingArticle } = await supabase
-    .from("articles")
-    .select("id")
-    .eq("source_url", article.link)
-    .maybeSingle();
 
-  if (existingArticle) {
-    console.log("Artikeln finns redan.");
-
-    return {
-      success: true,
-      message: "Artikeln finns redan.",
-    };
-  }
 
   console.log("Sparar i Supabase...");
 
@@ -224,9 +378,14 @@ delete generatedArticle.readingTime;
   };
 }
 
+
+
 export async function GET() {
   try {
+console.log("📰 TESTAR EN RIKTIG ARTIKEL");
+
     console.log("Startar RSS-import...");
+
 
     for (const feedInfo of feeds) {
       console.log("--------------------------------");
@@ -234,7 +393,7 @@ export async function GET() {
 
       const feed = await parser.parseURL(feedInfo.url);
 
-const latestArticles = feed.items.slice(0, 10);
+const latestArticles = feed.items.slice(0, 5);
 
 for (const article of latestArticles) {
   try {
