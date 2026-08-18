@@ -72,13 +72,14 @@ const heroArticle = [...articles].sort(
 
         {/* Höger kolumn */}
         <div className="relative overflow-hidden rounded-3xl">
-          <Image
-            src={heroArticle.image}
-            alt={heroArticle.title}
-            width={1200}
-            height={700}
-            className="h-[600px] w-full rounded-3xl object-cover shadow-2xl"
-          />
+<Image
+  src={heroArticle.image}
+  alt={heroArticle.title}
+  width={1200}
+  height={700}
+  priority
+  className="h-[600px] w-full rounded-3xl object-cover shadow-2xl"
+/>
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
         </div>
