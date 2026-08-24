@@ -393,7 +393,7 @@ console.log("📰 TESTAR EN RIKTIG ARTIKEL");
 
       const feed = await parser.parseURL(feedInfo.url);
 
-const latestArticles = feed.items.slice(0, 5);
+const latestArticles = feed.items.slice(0, 1);
 
 for (const article of latestArticles) {
   try {
