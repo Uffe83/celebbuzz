@@ -7,7 +7,6 @@ export default async function Home() {
 const { data: articles, error } = await supabase
   .from("articles")
   .select("*")
-  .order("priority", { ascending: false })
   .order("created_at", { ascending: false });
   if (error) {
     console.error(error);
@@ -133,7 +132,9 @@ const heroArticle = [...articles].sort(
 </h3>
 
         <div className="grid gap-6 md:grid-cols-3">
-{articles.slice(1).map((article) => (
+{articles
+  .filter((article) => article.slug !== heroArticle.slug)
+  .map((article) => (
   <Link
     key={article.slug}
 href={`/article/${article.slug}`}
