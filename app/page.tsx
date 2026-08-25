@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Header from "./components/Header";
 import { supabase } from "../lib/supabase";
+export const revalidate = 60;
 
 export default async function Home() {
 const { data: articles, error } = await supabase
