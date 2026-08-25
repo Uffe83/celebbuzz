@@ -362,10 +362,15 @@ delete generatedArticle.readingTime;
 
 
 
-export async function GET() {
-  try {
+export async function GET(request: Request) {
+  const authHeader = request.headers.get("authorization");
 
-  console.log("Startar RSS-import...");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  try {
+    console.log("Startar RSS-import...");
 
 let failed = 0;
 
