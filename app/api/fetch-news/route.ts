@@ -375,23 +375,40 @@ export async function GET(request: Request) {
 let failed = 0;
 
 for (const feedInfo of feeds) {
-      console.log("--------------------------------");
-      console.log("Läser RSS:", feedInfo.name);
-
-      const feed = await parser.parseURL(feedInfo.url);
-
-const latestArticles = feed.items.slice(0, 1);
-
-for (const article of latestArticles) {
   try {
-  await generateArticle(article);
-} catch (error) {
-  failed++;
-  console.error("Kunde inte importera artikel:", article.title);
-  console.error(error);
-}
-}
+    console.log("--------------------------------");
+    console.log("Läser RSS:", feedInfo.name);
+
+    const feed = await parser.parseURL(feedInfo.url);
+
+    const latestArticles = feed.items.slice(0, 1);
+
+    for (const article of latestArticles) {
+      try {
+        await generateArticle(article);
+      } catch (error) {
+        failed++;
+
+        console.error(
+          "Kunde inte importera artikel:",
+          article.title
+        );
+
+        console.error(error);
+      }
     }
+  } catch (error) {
+    failed++;
+
+    console.error(
+      "❌ Kunde inte läsa RSS:",
+      feedInfo.name
+    );
+
+    console.error(error);
+  }
+}
+
 
     console.log("Alla feeds klara.");
 
