@@ -25,27 +25,10 @@ const supabaseAdmin = createClient(
   }
 );
 
-async function testStorage() {
 
-
-  const { data, error } = await supabaseAdmin.storage
-    .from("article-images")
-    .list();
-
-
-  if (error) {
-    console.error("❌ Storage-test misslyckades:", error);
-    return false;
-  }
-
-  console.log("✅ Storage fungerar!");
-  console.log("Filer:", data);
-
-  return true;
-}
 
 async function generateImage(imagePrompt: string, slug: string) {
-  console.log("🎨 Testar AI-bildgenerering...");
+  console.log("🎨 Genererar artikelbild...");
 
 const prompt =
   "Professional editorial entertainment image for a major Swedish entertainment news website. " +
@@ -65,7 +48,6 @@ const prompt =
         model: "google/gemini-3.1-flash-image",
         prompt,
         aspect_ratio: "16:9",
-        output_format: "png",
       }),
     }
   );
@@ -382,12 +364,12 @@ delete generatedArticle.readingTime;
 
 export async function GET() {
   try {
-console.log("📰 TESTAR EN RIKTIG ARTIKEL");
 
-    console.log("Startar RSS-import...");
+  console.log("Startar RSS-import...");
 
+let failed = 0;
 
-    for (const feedInfo of feeds) {
+for (const feedInfo of feeds) {
       console.log("--------------------------------");
       console.log("Läser RSS:", feedInfo.name);
 
@@ -398,19 +380,21 @@ const latestArticles = feed.items.slice(0, 1);
 for (const article of latestArticles) {
   try {
   await generateArticle(article);
-  } catch (error) {
-    console.error("Kunde inte importera artikel:", article.title);
-    console.error(error);
-  }
+} catch (error) {
+  failed++;
+  console.error("Kunde inte importera artikel:", article.title);
+  console.error(error);
+}
 }
     }
 
     console.log("Alla feeds klara.");
 
-    return Response.json({
-      success: true,
-      message: "Alla RSS-flöden har behandlats.",
-    });
+return Response.json({
+  success: failed === 0,
+  message: "Alla RSS-flöden har behandlats.",
+  failed,
+});
   } catch (error) {
     console.error("FEL:");
     console.error(error);
