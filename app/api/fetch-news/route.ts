@@ -363,11 +363,19 @@ delete generatedArticle.readingTime;
 
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
+const authHeader = request.headers.get("authorization");
 
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+const validSecrets = [
+  process.env.CRON_SECRET,
+  process.env.SUPABASE_CRON_SECRET,
+].filter(Boolean);
+
+if (
+  !authHeader ||
+  !validSecrets.includes(authHeader.replace("Bearer ", ""))
+) {
+  return new Response("Unauthorized", { status: 401 });
+}
 
   try {
     console.log("Startar RSS-import...");
