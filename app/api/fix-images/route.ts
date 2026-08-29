@@ -129,14 +129,18 @@ for (const article of articles) {
       article.slug
     );
 
-    const { error: updateError } = await supabaseAdmin
-      .from("articles")
-      .update({ image: imageUrl })
-      .eq("id", article.id);
+const { data: updatedArticle, error: updateError } = await supabaseAdmin
+  .from("articles")
+  .update({ image: imageUrl })
+  .eq("id", article.id)
+  .select("id, image")
+  .single();
 
-    if (updateError) {
-      throw updateError;
-    }
+if (updateError) {
+  throw updateError;
+}
+
+console.log("Image saved:", updatedArticle);
 
     results.push({
       id: article.id,
