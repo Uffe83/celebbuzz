@@ -1,5 +1,4 @@
 import { supabase } from "@/lib/supabase";
-
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseAdmin = createClient(
@@ -14,78 +13,6 @@ const supabaseAdmin = createClient(
   }
 );
 
-async function generateImage(imagePrompt: string, slug: string) {
-  console.log("🎨 Genererar AI-bild...");
-
-  const prompt =
-    "Professional editorial entertainment image for a major Swedish entertainment news website. " +
-    imagePrompt +
-    " Cinematic lighting, premium magazine photography aesthetic, wide horizontal composition, " +
-    "realistic details, no identifiable person, no text, no logos, no watermark.";
-
-  const response = await fetch(
-    "https://openrouter.ai/api/v1/images",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3.1-flash-image",
-        prompt,
-        aspect_ratio: "16:9",
-
-      }),
-    }
-  );
-
-  const result = await response.json();
-
-if (!response.ok) {
-  console.error(
-    "❌ OpenRouter error:",
-    response.status,
-    JSON.stringify(result, null, 2)
-  );
-
-  throw new Error(
-    `Bildgenerering misslyckades: ${response.status} ${JSON.stringify(result)}`
-  );
-}
-
-  const base64Image = result.data?.[0]?.b64_json;
-
-  if (!base64Image) {
-    console.error("❌ Ingen bilddata hittades:", result);
-    throw new Error("Ingen bilddata från bildgeneratorn");
-  }
-
-  const imageBuffer = Buffer.from(base64Image, "base64");
-
-  const safeSlug = slug
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-  const filePath = `articles/${safeSlug}-${Date.now()}.png`;
-
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from("article-images")
-    .upload(filePath, imageBuffer, {
-      contentType: "image/png",
-      upsert: true,
-    });
-
-  if (uploadError) {
-    throw uploadError;
-  }
-
-  const { data: publicUrlData } = supabaseAdmin.storage
-    .from("article-images")
-    .getPublicUrl(filePath);
-
-  return publicUrlData.publicUrl;
-}
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const secret = searchParams.get("secret");
@@ -96,12 +23,35 @@ export async function GET(request: Request) {
       { status: 401 }
     );
   }
- 
-const { data: articles, error } = await supabase
-  .from("articles")
-  .select("id, title, slug")
-  .or("image.is.null,image.eq./images/test.jpg")
-  .limit(5);
+
+  /*
+   * Hämta artiklar som har en riktig källbild.
+   *
+   * Vi behandlar:
+   * - artiklar där image är NULL
+   * - artiklar där image fortfarande är en extern URL
+   *
+   * Vi hoppar över artiklar där image redan är en lokal
+   * Supabase Storage-URL.
+   */
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+
+  const localImagePrefix =
+    `${supabaseUrl}/storage/v1/object/public/article-images/`;
+
+  const { data: articles, error } = await supabase
+    .from("articles")
+    .select(
+      "id, title, slug, source_image_url, image, image_generated"
+    )
+    .not("source_image_url", "is", null)
+    .eq("image_generated", false)
+    .or(
+      `image.is.null,image.not.like.${localImagePrefix}%`
+    )
+    .order("id", { ascending: false })
+    .limit(5);
 
   if (error) {
     return Response.json(
@@ -110,66 +60,186 @@ const { data: articles, error } = await supabase
     );
   }
 
-
-if (!articles || articles.length === 0) {
-  return Response.json({
-    message: "Inga artiklar utan bild hittades",
-  });
-}
-
-const results = [];
-
-for (const article of articles) {
-  try {
-    const imagePrompt =
-      `Create an editorial image inspired by this entertainment news story: ${article.title}`;
-
-    const imageUrl = await generateImage(
-      imagePrompt,
-      article.slug
-    );
-
-const { data: updatedArticle, error: updateError } = await supabaseAdmin
-  .from("articles")
-  .update({ image: imageUrl })
-  .eq("id", article.id)
-  .select("id, image")
-  .single();
-
-if (updateError) {
-  throw updateError;
-}
-
-console.log("Image saved:", updatedArticle);
-
-    results.push({
-      id: article.id,
-      title: article.title,
-      success: true,
-      imageUrl,
-    });
-
-  } catch (error) {
-    console.error(
-      `❌ Misslyckades med artikel ${article.id}:`,
-      error
-    );
-
-    results.push({
-      id: article.id,
-      title: article.title,
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Okänt fel",
+  if (!articles || articles.length === 0) {
+    return Response.json({
+      message: "Inga artiklar med källbild behöver behandlas",
+      processed: 0,
+      results: [],
     });
   }
-}
 
-return Response.json({
-  message: "Batch klar",
-  processed: results.length,
-  results,
-});
+  const results = [];
+
+  for (const article of articles) {
+    try {
+      if (!article.source_image_url) {
+        throw new Error("source_image_url saknas");
+      }
+
+      console.log(
+        `⬇️ Hämtar riktig källbild för artikel ${article.id}:`,
+        article.source_image_url
+      );
+
+      /*
+       * 1. Hämta den riktiga bilden från originalkällan.
+       */
+
+      const imageResponse = await fetch(
+        article.source_image_url,
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (compatible; EntertainmentNewsBot/1.0)",
+          },
+        }
+      );
+
+      if (!imageResponse.ok) {
+        throw new Error(
+          `Kunde inte hämta bilden: HTTP ${imageResponse.status}`
+        );
+      }
+
+      const imageBuffer = Buffer.from(
+        await imageResponse.arrayBuffer()
+      );
+
+      if (!imageBuffer.length) {
+        throw new Error("Den hämtade bilden var tom");
+      }
+
+      /*
+       * 2. Bestäm bildens filtyp.
+       */
+
+      const contentType =
+        imageResponse.headers.get("content-type") ||
+        "image/jpeg";
+
+      let extension = "jpg";
+
+      if (contentType.includes("png")) {
+        extension = "png";
+      } else if (contentType.includes("webp")) {
+        extension = "webp";
+      } else if (contentType.includes("gif")) {
+        extension = "gif";
+      } else if (
+        contentType.includes("jpeg") ||
+        contentType.includes("jpg")
+      ) {
+        extension = "jpg";
+      }
+
+      /*
+       * 3. Skapa ett säkert filnamn.
+       */
+
+      const safeSlug = article.slug
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9-_]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+
+      const filePath =
+        `articles/${safeSlug}-source.${extension}`;
+
+      console.log(
+        `⬆️ Laddar upp källbild till Supabase: ${filePath}`
+      );
+
+      /*
+       * 4. Spara den riktiga bilden i Supabase Storage.
+       */
+
+      const { error: uploadError } =
+        await supabaseAdmin.storage
+          .from("article-images")
+          .upload(
+            filePath,
+            imageBuffer,
+            {
+              contentType,
+              upsert: true,
+            }
+          );
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      /*
+       * 5. Skapa publik Supabase-URL.
+       */
+
+      const { data: publicUrlData } =
+        supabaseAdmin.storage
+          .from("article-images")
+          .getPublicUrl(filePath);
+
+      const imageUrl = publicUrlData.publicUrl;
+
+      /*
+       * 6. Spara den lokala bilden på artikeln.
+       *
+       * image_generated förblir false eftersom bilden
+       * INTE är AI-genererad.
+       */
+
+      const {
+        data: updatedArticle,
+        error: updateError,
+      } = await supabaseAdmin
+        .from("articles")
+        .update({
+          image: imageUrl,
+          image_generated: false,
+        })
+        .eq("id", article.id)
+        .select(
+          "id, image, image_generated, source_image_url"
+        )
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      console.log(
+        "✅ Riktig källbild sparad:",
+        updatedArticle
+      );
+
+      results.push({
+        id: article.id,
+        title: article.title,
+        success: true,
+        sourceImageUrl: article.source_image_url,
+        imageUrl,
+      });
+    } catch (error) {
+      console.error(
+        `❌ Misslyckades med artikel ${article.id}:`,
+        error
+      );
+
+      results.push({
+        id: article.id,
+        title: article.title,
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Okänt fel",
+      });
+    }
+  }
+
+  return Response.json({
+    message: "Batch klar",
+    processed: results.length,
+    results,
+  });
 }
