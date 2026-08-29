@@ -347,11 +347,15 @@ console.log("====================");
 
   console.log(rssArticle);
 
+  const ogImage = await getOgImage(article.link!);
+
+console.log("OG IMAGE:", ogImage);
+
 const image =
+  ogImage ||
   rssArticle.enclosure?.url ||
   rssArticle["media:content"]?.url ||
   rssArticle["media:thumbnail"]?.url ||
-  await getOgImage(article.link || "") ||
   "/images/test.jpg";
 
 generatedArticle.image = image;
