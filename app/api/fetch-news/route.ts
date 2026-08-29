@@ -383,7 +383,7 @@ for (const feedInfo of feeds) {
 
     const feed = await parser.parseURL(feedInfo.url);
 
-    const latestArticles = feed.items.slice(0, 1);
+    const latestArticles = feed.items.slice(0, 3);
 
     for (const article of latestArticles) {
       try {
