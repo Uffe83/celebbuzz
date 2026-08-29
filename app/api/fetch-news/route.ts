@@ -25,6 +25,31 @@ const supabaseAdmin = createClient(
   }
 );
 
+async function getOgImage(url: string) {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const html = await response.text();
+
+    const match = html.match(
+      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i
+    );
+
+    return match?.[1] || null;
+  } catch (error) {
+    console.error("Kunde inte hämta og:image:", error);
+    return null;
+  }
+}
+
 
 
 async function generateImage(imagePrompt: string, slug: string) {
@@ -322,10 +347,11 @@ console.log("====================");
 
   console.log(rssArticle);
 
- const image =
+const image =
   rssArticle.enclosure?.url ||
   rssArticle["media:content"]?.url ||
   rssArticle["media:thumbnail"]?.url ||
+  await getOgImage(article.link || "") ||
   "/images/test.jpg";
 
 generatedArticle.image = image;
