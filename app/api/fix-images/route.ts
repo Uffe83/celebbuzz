@@ -90,11 +90,11 @@ export async function GET(request: Request) {
     );
   }
  
-  const { data: articles, error } = await supabase
-    .from("articles")
-    .select("id, title, slug")
-  .is("image", null)
-.limit(5);
+const { data: articles, error } = await supabase
+  .from("articles")
+  .select("id, title, slug")
+  .or("image.is.null,image.eq./images/test.jpg")
+  .limit(5);
 
   if (error) {
     return Response.json(
