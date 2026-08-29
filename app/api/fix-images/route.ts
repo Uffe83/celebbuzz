@@ -42,10 +42,17 @@ async function generateImage(imagePrompt: string, slug: string) {
 
   const result = await response.json();
 
-  if (!response.ok) {
-    console.error("❌ Bildgenerering misslyckades:", result);
-    throw new Error("Bildgenerering misslyckades");
-  }
+if (!response.ok) {
+  console.error(
+    "❌ OpenRouter error:",
+    response.status,
+    JSON.stringify(result, null, 2)
+  );
+
+  throw new Error(
+    `Bildgenerering misslyckades: ${response.status} ${JSON.stringify(result)}`
+  );
+}
 
   const base64Image = result.data?.[0]?.b64_json;
 
