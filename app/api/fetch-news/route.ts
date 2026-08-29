@@ -322,16 +322,17 @@ console.log("====================");
 
   console.log(rssArticle);
 
-  const image =
-    rssArticle.enclosure?.url ||
-    rssArticle["media:content"]?.url ||
-    rssArticle["media:thumbnail"]?.url ||
-    "/images/test.jpg";
+ const image =
+  rssArticle.enclosure?.url ||
+  rssArticle["media:content"]?.url ||
+  rssArticle["media:thumbnail"]?.url ||
+  "/images/test.jpg";
 
- 
-  generatedArticle.source_url = article.link;
+generatedArticle.image = image;
 
-  generatedArticle.reading_time = generatedArticle.readingTime;
+generatedArticle.source_url = article.link;
+
+generatedArticle.reading_time = generatedArticle.readingTime;
 delete generatedArticle.readingTime;
 
 
