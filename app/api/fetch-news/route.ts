@@ -304,12 +304,6 @@ const generatedArticle = JSON.parse(cleaned);
 
 console.log("🎨 Genererar artikelbild från AI:ns imagePrompt...");
 
-const imageResult = await generateImage(
-  generatedArticle.imagePrompt,
-  generatedArticle.slug
-);
-
-generatedArticle.image = imageResult.imageUrl;
 
 console.log("=== AI JSON ===");
 

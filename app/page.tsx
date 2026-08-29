@@ -128,53 +128,73 @@ const heroArticle = [...articles].sort(
   </div>
 </section>
 
-      <section className="mx-auto max-w-7xl p-8">
-<h3 className="mb-6 flex items-center gap-2 text-3xl font-bold">
-  📰 Senaste Nyheter
-</h3>
+<section className="mx-auto max-w-7xl px-8 pb-16">
+  <div className="mb-8 flex items-end justify-between">
+    <div>
+      <p className="mb-2 text-sm font-bold uppercase tracking-[0.2em] text-pink-500">
+        Senaste
+      </p>
 
-        <div className="grid gap-6 md:grid-cols-3">
-{articles
-  .filter((article) => article.slug !== heroArticle.slug)
-  .map((article) => (
-  <Link
-    key={article.slug}
-href={`/article/${article.slug}`}
-  >
-    <article className="overflow-hidden rounded-2xl bg-zinc-900 shadow-lg transition duration-300 hover:-translate-y-2 hover:shadow-2xl hover:bg-zinc-800 p-6">
-            
+      <h3 className="flex items-center gap-2 text-3xl font-extrabold">
+        📰 Senaste Nyheter
+      </h3>
+    </div>
+  </div>
+
+  <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+    {articles
+      .filter((article) => article.slug !== heroArticle.slug)
+      .map((article) => (
+        <Link
+          key={article.slug}
+          href={`/article/${article.slug}`}
+          className="group"
+        >
+          <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:border-pink-500/40 group-hover:bg-zinc-800 group-hover:shadow-2xl">
+
+            <div className="relative overflow-hidden">
               <Image
-  src={article.image}
-  alt={article.title}
-  width={500}
-  height={300}
-  className="h-52 w-full object-cover transition duration-300 hover:scale-105"
-/>
+                src={article.image}
+                alt={article.title}
+                width={800}
+                height={500}
+                className="h-56 w-full object-cover transition duration-500 group-hover:scale-105"
+              />
 
-<p className="mb-2 text-sm uppercase text-pink-400">
-  {article.category}
-</p>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-70" />
 
-<p className="mb-3 text-xs text-zinc-500">
-  📅 {article.date} • ⏱ {article.reading_time} min
-</p>
+              <span className="absolute bottom-4 left-4 rounded-full bg-pink-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
+                {article.category}
+              </span>
+            </div>
 
-<h4 className="mb-2 text-xl font-semibold">
-  {article.title}
-</h4>
+            <div className="flex flex-1 flex-col p-6">
 
-<p className="text-zinc-400">
-  {article.excerpt}
-</p>
+              <p className="mb-3 text-xs text-zinc-500">
+                📅 {article.date}
+                {" • "}
+                ⏱ {article.reading_time} min
+              </p>
 
-<p className="mt-5 font-semibold text-pink-400">
-  Läs mer →
-</p>
+              <h4 className="mb-3 line-clamp-3 text-xl font-bold leading-snug transition group-hover:text-pink-400">
+                {article.title}
+              </h4>
 
-</article>
-</Link>
-))}
-</div>
+              <p className="line-clamp-3 text-sm leading-6 text-zinc-400">
+                {article.excerpt}
+              </p>
+
+              <div className="mt-auto pt-6">
+                <span className="font-semibold text-pink-400 transition group-hover:text-pink-300">
+                  Läs mer →
+                </span>
+              </div>
+
+            </div>
+          </article>
+        </Link>
+      ))}
+  </div>
 </section>
 
       <footer className="border-t border-zinc-800 p-8 text-center text-zinc-500">
