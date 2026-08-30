@@ -131,11 +131,16 @@ async function generateArticle(
   article: Parser.Item
 ) {
 
-  const { data: existingArticle } = await supabase
+  const { data: existingArticle, error: existingArticleError } = await supabase
     .from("articles")
     .select("id")
     .eq("source_url", article.link)
+    .limit(1)
     .maybeSingle();
+
+  if (existingArticleError) {
+    throw existingArticleError;
+  }
 
   if (existingArticle) {
     console.log("⏭️ Artikeln finns redan, hoppar över:", article.title);
@@ -365,17 +370,16 @@ generatedArticle.source_url = article.link;
 generatedArticle.reading_time = generatedArticle.readingTime;
 delete generatedArticle.readingTime;
 
+console.log("Sparar i Supabase...");
 
+const { error } = await supabase
+  .from("articles")
+  .insert([generatedArticle]);
 
-  console.log("Sparar i Supabase...");
+if (error) {
+  throw error;
+}
 
-  const { error } = await supabase
-    .from("articles")
-    .insert([generatedArticle]);
-
-  if (error) {
-    throw error;
-  }
 
   console.log("✅ Sparad!");
 

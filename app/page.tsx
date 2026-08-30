@@ -154,7 +154,7 @@ const heroArticle = [...articles].sort(
 
             <div className="relative overflow-hidden">
               <Image
-                src={article.image}
+                src={article.image || article.source_image_url}
                 alt={article.title}
                 width={800}
                 height={500}
