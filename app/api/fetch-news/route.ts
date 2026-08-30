@@ -143,7 +143,7 @@ async function generateArticle(
   }
 
   if (existingArticle) {
-    console.log("⏭️ Artikeln finns redan, hoppar över:", article.title);
+    console.log("⏭️ Källan finns redan, hoppar över:", article.title);
 
     return {
       success: true,
@@ -364,20 +364,62 @@ const image =
   "/images/test.jpg";
 
 generatedArticle.image = image;
-
+generatedArticle.source_image_url = image;
 generatedArticle.source_url = article.link;
+generatedArticle.status = "draft";
 
 generatedArticle.reading_time = generatedArticle.readingTime;
 delete generatedArticle.readingTime;
 
-console.log("Sparar i Supabase...");
+// Extra skydd mot dubbletter från olika RSS-flöden.
+const { data: duplicateByTitle, error: duplicateTitleError } = await supabaseAdmin
+  .from("articles")
+  .select("id, title")
+  .eq("title", generatedArticle.title)
+  .limit(1)
+  .maybeSingle();
 
-const { error } = await supabase
+if (duplicateTitleError) {
+  throw duplicateTitleError;
+}
+
+if (duplicateByTitle) {
+  console.log("⏭️ Samma titel finns redan, sparar inte:", generatedArticle.title);
+
+  return {
+    success: true,
+    skipped: true,
+  };
+}
+
+const { data: duplicateByImage, error: duplicateImageError } = await supabaseAdmin
+  .from("articles")
+  .select("id")
+  .eq("source_image_url", image)
+  .limit(1)
+  .maybeSingle();
+
+if (duplicateImageError) {
+  throw duplicateImageError;
+}
+
+if (duplicateByImage) {
+  console.log("⏭️ Samma källbild finns redan, sparar inte:", generatedArticle.title);
+
+  return {
+    success: true,
+    skipped: true,
+  };
+}
+
+console.log("Sparar som UTKAST i Supabase...");
+
+const { error: insertError } = await supabaseAdmin
   .from("articles")
   .insert([generatedArticle]);
 
-if (error) {
-  throw error;
+if (insertError) {
+  throw insertError;
 }
 
 
@@ -410,19 +452,59 @@ if (
     console.log("Startar RSS-import...");
 
 let failed = 0;
+let processed = 0;
+let skipped = 0;
+const MAX_ARTICLES_PER_DAY = 5;
+
+const startOfToday = new Date();
+startOfToday.setHours(0, 0, 0, 0);
+
+const { count: todayCount, error: countError } = await supabaseAdmin
+  .from("articles")
+  .select("id", { count: "exact", head: true })
+  .gte("created_at", startOfToday.toISOString());
+
+if (countError) {
+  throw countError;
+}
+
+let remaining = MAX_ARTICLES_PER_DAY - (todayCount || 0);
+
+if (remaining <= 0) {
+  return Response.json({
+    success: true,
+    message: "Dagens gräns på 5 nya artiklar är redan nådd.",
+    processed: 0,
+    skipped: 0,
+    failed: 0,
+  });
+}
 
 for (const feedInfo of feeds) {
+  if (remaining <= 0) break;
+
   try {
     console.log("--------------------------------");
     console.log("Läser RSS:", feedInfo.name);
 
     const feed = await parser.parseURL(feedInfo.url);
-
     const latestArticles = feed.items.slice(0, 3);
 
     for (const article of latestArticles) {
+      if (remaining <= 0) break;
+
       try {
-        await generateArticle(article);
+        const result = await generateArticle(article);
+
+        if (result?.skipped) {
+          skipped++;
+          continue;
+        }
+
+        if (result?.success) {
+          processed++;
+          remaining--;
+        }
       } catch (error) {
         failed++;
 
@@ -446,13 +528,15 @@ for (const feedInfo of feeds) {
   }
 }
 
-
-    console.log("Alla feeds klara.");
+console.log("Alla feeds klara.");
 
 return Response.json({
   success: failed === 0,
-  message: "Alla RSS-flöden har behandlats.",
+  message: "RSS-import klar. Nya artiklar sparas som utkast.",
+  processed,
+  skipped,
   failed,
+  dailyLimit: MAX_ARTICLES_PER_DAY,
 });
   } catch (error) {
     console.error("FEL:");
