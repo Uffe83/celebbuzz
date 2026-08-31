@@ -477,6 +477,8 @@ if (remaining <= 0) {
     processed: 0,
     skipped: 0,
     failed: 0,
+    dailyLimit: MAX_ARTICLES_PER_DAY,
+    remaining: 0,
   });
 }
 
