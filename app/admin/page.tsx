@@ -11,7 +11,7 @@ export default function AdminPage() {
     setMessage("");
 
     try {
-      const response = await fetch("/api/fetch-news");
+      const response = await fetch("/api/admin/fetch-news");
 
       const data = await response.json();
 
