@@ -8,12 +8,27 @@ export default function AdminPage() {
 
   async function generateArticle() {
     setLoading(true);
+    setMessage("");
 
-await fetch("/api/fetch-news");
+    try {
+      const response = await fetch("/api/fetch-news");
 
-setMessage("✅ RSS-importen är klar!");
+      const data = await response.json();
 
-    setLoading(false);
+      if (!response.ok) {
+        throw new Error(data.error || "Importen misslyckades");
+      }
+
+      setMessage(
+        `✅ RSS-import klar! | 🟢 Nya: ${data.processed} | ⏭️ Dubbletter: ${data.skipped} | ❌ Fel: ${data.failed} | 📊 Kvar idag: ${data.remaining}`
+      );
+    } catch (error) {
+      console.error(error);
+
+      setMessage("❌ Något gick fel vid RSS-importen.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -35,22 +50,23 @@ setMessage("✅ RSS-importen är klar!");
           cursor: "pointer",
         }}
       >
-{loading ? "Importerar nyheter..." : "📰 Hämta senaste nyheter"}
+        {loading ? "Importerar nyheter..." : "📰 Hämta senaste nyheter"}
       </button>
+
       {message && (
-  <div
-    style={{
-      marginTop: 30,
-      padding: 20,
-      background: "#d1fae5",
-      borderRadius: 10,
-      color: "#065f46",
-      fontWeight: "bold",
-    }}
-  >
-    {message}
-  </div>
-)}
+        <div
+          style={{
+            marginTop: 30,
+            padding: 20,
+            background: "#d1fae5",
+            borderRadius: 10,
+            color: "#065f46",
+            fontWeight: "bold",
+          }}
+        >
+          {message}
+        </div>
+      )}
     </main>
   );
 }
