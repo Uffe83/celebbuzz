@@ -19,9 +19,9 @@ export default function AdminPage() {
         throw new Error(data.error || "Importen misslyckades");
       }
 
-      setMessage(
-        `✅ RSS-import klar! | 🟢 Nya: ${data.processed} | ⏭️ Dubbletter: ${data.skipped} | ❌ Fel: ${data.failed} | 📊 Kvar idag: ${data.remaining}`
-      );
+setMessage(
+  `✅ RSS-import klar! | 🟢 Nya: ${data.processed} | ⏭️ Dubbletter: ${data.skipped} | ❌ Fel: ${data.failed} | 📊 Kvar idag: ${data.remaining ?? 0}`
+);
     } catch (error) {
       console.error(error);
 
