@@ -532,11 +532,12 @@ console.log("Alla feeds klara.");
 
 return Response.json({
   success: failed === 0,
-  message: "RSS-import klar. Nya artiklar sparas som utkast.",
+  message: "RSS-import klar.",
   processed,
   skipped,
   failed,
   dailyLimit: MAX_ARTICLES_PER_DAY,
+  remaining,
 });
   } catch (error) {
     console.error("FEL:");
