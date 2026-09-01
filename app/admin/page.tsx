@@ -38,14 +38,17 @@ export default function AdminPage() {
     }
   }
 
-  async function loadArticles() {
-    const response = await fetch("/api/articles");
-    const data = await response.json();
+async function loadArticles() {
+  const response = await fetch("/api/articles", {
+    cache: "no-store",
+  });
 
-    if (response.ok) {
-      setArticles(data);
-    }
+  const data = await response.json();
+
+  if (response.ok) {
+    setArticles(data);
   }
+}
 
   function startEditing(article: any) {
     setEditingId(article.id);
@@ -100,6 +103,38 @@ export default function AdminPage() {
     } catch (error) {
       console.error(error);
       setMessage("❌ Kunde inte spara artikeln.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function publishArticle(id: number) {
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/articles/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "published",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Kunde inte publicera artikeln");
+      }
+
+      setMessage("🟢 Artikeln är publicerad!");
+
+      await loadArticles();
+    } catch (error) {
+      console.error(error);
+      setMessage("❌ Kunde inte publicera artikeln.");
     } finally {
       setLoading(false);
     }
@@ -254,12 +289,25 @@ export default function AdminPage() {
 
                   <button
                     onClick={() => startEditing(article)}
+                    disabled={loading}
+                    style={{
+                      padding: "10px 16px",
+                      marginRight: 10,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ✏️ Redigera
+                  </button>
+
+                  <button
+                    onClick={() => publishArticle(article.id)}
+                    disabled={loading}
                     style={{
                       padding: "10px 16px",
                       cursor: "pointer",
                     }}
                   >
-                    ✏️ Redigera
+                    🟢 Publicera
                   </button>
                 </>
               )}

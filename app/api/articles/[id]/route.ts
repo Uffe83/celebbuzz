@@ -8,16 +8,28 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const { title, excerpt, content, category } = body;
+    const { title, excerpt, content, category, status } = body;
+
+    const updateData: {
+      title?: string;
+      excerpt?: string;
+      content?: string;
+      category?: string;
+      status?: string;
+    } = {
+      title,
+      excerpt,
+      content,
+      category,
+    };
+
+    if (status !== undefined) {
+      updateData.status = status;
+    }
 
     const { data, error } = await supabase
       .from("articles")
-      .update({
-        title,
-        excerpt,
-        content,
-        category,
-      })
+      .update(updateData)
       .eq("id", id)
       .select()
       .maybeSingle();
