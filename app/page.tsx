@@ -23,6 +23,14 @@ if (!articles || articles.length === 0) {
   );
 }
 
+function getImage(article: any) {
+  return (
+    article.image ||
+    article.source_image_url ||
+    "/placeholder.jpg"
+  );
+}
+
 const heroArticle = [...articles].sort(
   (a, b) => (b.priority ?? 0) - (a.priority ?? 0)
 )[0];
@@ -74,7 +82,7 @@ const heroArticle = [...articles].sort(
         {/* Höger kolumn */}
         <div className="relative overflow-hidden rounded-3xl">
 <Image
-  src={heroArticle.image}
+  src={getImage(heroArticle)}
   alt={heroArticle.title}
   width={1200}
   height={700}
@@ -153,8 +161,8 @@ const heroArticle = [...articles].sort(
           <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900 shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:border-pink-500/40 group-hover:bg-zinc-800 group-hover:shadow-2xl">
 
             <div className="relative overflow-hidden">
-              <Image
-                src={article.image || article.source_image_url}
+            <Image
+  src={getImage(article)}
                 alt={article.title}
                 width={800}
                 height={500}

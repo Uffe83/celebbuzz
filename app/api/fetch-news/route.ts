@@ -352,19 +352,30 @@ console.log("====================");
 
   console.log(rssArticle);
 
-  const ogImage = await getOgImage(article.link!);
+const ogImage = await getOgImage(article.link!);
 
-console.log("OG IMAGE:", ogImage);
-
-const image =
+const sourceImage =
   ogImage ||
   rssArticle.enclosure?.url ||
   rssArticle["media:content"]?.url ||
   rssArticle["media:thumbnail"]?.url ||
-  "/images/test.jpg";
+  null;
 
-generatedArticle.image = image;
-generatedArticle.source_image_url = image;
+console.log("OG IMAGE:", ogImage);
+console.log("SOURCE IMAGE:", sourceImage);
+
+console.log("🎨 Skapar och sparar egen AI-bild...");
+
+const generatedImage = await generateImage(
+  generatedArticle.imagePrompt,
+  generatedArticle.slug
+);
+
+generatedArticle.image = generatedImage.imageUrl;
+
+// Spara originalkällan separat, endast för referens
+generatedArticle.source_image_url = sourceImage;
+
 generatedArticle.source_url = article.link;
 generatedArticle.status = "draft";
 
@@ -392,12 +403,13 @@ if (duplicateByTitle) {
   };
 }
 
-const { data: duplicateByImage, error: duplicateImageError } = await supabaseAdmin
-  .from("articles")
-  .select("id")
-  .eq("source_image_url", image)
-  .limit(1)
-  .maybeSingle();
+const { data: duplicateByImage, error: duplicateImageError } =
+  await supabaseAdmin
+    .from("articles")
+    .select("id")
+    .eq("source_image_url", sourceImage)
+    .limit(1)
+    .maybeSingle();
 
 if (duplicateImageError) {
   throw duplicateImageError;
