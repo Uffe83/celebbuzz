@@ -8,7 +8,13 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const { title, excerpt, content, category, status } = body;
+    const {
+      title,
+      excerpt,
+      content,
+      category,
+      status,
+    } = body;
 
     const updateData: {
       title?: string;
@@ -16,12 +22,24 @@ export async function PATCH(
       content?: string;
       category?: string;
       status?: string;
-    } = {
-      title,
-      excerpt,
-      content,
-      category,
-    };
+    } = {};
+
+    // Uppdatera bara fält som faktiskt skickats
+    if (title !== undefined) {
+      updateData.title = title;
+    }
+
+    if (excerpt !== undefined) {
+      updateData.excerpt = excerpt;
+    }
+
+    if (content !== undefined) {
+      updateData.content = content;
+    }
+
+    if (category !== undefined) {
+      updateData.category = category;
+    }
 
     if (status !== undefined) {
       updateData.status = status;
