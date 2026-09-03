@@ -25,33 +25,6 @@ const supabaseAdmin = createClient(
   }
 );
 
-async function getOgImage(url: string) {
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-      },
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const html = await response.text();
-
-    const match = html.match(
-      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i
-    );
-
-    return match?.[1] || null;
-  } catch (error) {
-    console.error("Kunde inte hämta og:image:", error);
-    return null;
-  }
-}
-
-
-
 async function generateImage(imagePrompt: string, slug: string) {
   console.log("🎨 Genererar artikelbild...");
 
@@ -340,43 +313,20 @@ console.log("=== AI JSON ===");
 console.log(generatedArticle);
 console.log("================"); 
 
-  const rssArticle = article as any;
+    console.log("🎨 Skapar och sparar egen AI-bild...");
 
-console.log("===== Bildfält =====");
-console.log("enclosure:", rssArticle.enclosure);
-console.log("media:content:", rssArticle["media:content"]);
-console.log("media:thumbnail:", rssArticle["media:thumbnail"]);
-console.log("image:", rssArticle.image);
-console.log("itunes:", rssArticle.itunes);
-console.log("====================");
+  const generatedImage = await generateImage(
+    generatedArticle.imagePrompt,
+    generatedArticle.slug
+  );
 
-  console.log(rssArticle);
+  // Använd alltid vår egen AI-genererade bild som huvudbild.
+  generatedArticle.image = generatedImage.imageUrl;
 
-const ogImage = await getOgImage(article.link!);
+  // Ingen extern bildkälla används längre.
+  generatedArticle.source_image_url = null;
 
-const sourceImage =
-  ogImage ||
-  rssArticle.enclosure?.url ||
-  rssArticle["media:content"]?.url ||
-  rssArticle["media:thumbnail"]?.url ||
-  null;
-
-console.log("OG IMAGE:", ogImage);
-console.log("SOURCE IMAGE:", sourceImage);
-
-console.log("🎨 Skapar och sparar egen AI-bild...");
-
-const generatedImage = await generateImage(
-  generatedArticle.imagePrompt,
-  generatedArticle.slug
-);
-
-generatedArticle.image = generatedImage.imageUrl;
-
-// Spara originalkällan separat, endast för referens
-generatedArticle.source_image_url = sourceImage;
-
-generatedArticle.source_url = article.link;
+  generatedArticle.source_url = article.link;
 generatedArticle.status = "draft";
 
 generatedArticle.reading_time = generatedArticle.readingTime;
@@ -396,27 +346,6 @@ if (duplicateTitleError) {
 
 if (duplicateByTitle) {
   console.log("⏭️ Samma titel finns redan, sparar inte:", generatedArticle.title);
-
-  return {
-    success: true,
-    skipped: true,
-  };
-}
-
-const { data: duplicateByImage, error: duplicateImageError } =
-  await supabaseAdmin
-    .from("articles")
-    .select("id")
-    .eq("source_image_url", sourceImage)
-    .limit(1)
-    .maybeSingle();
-
-if (duplicateImageError) {
-  throw duplicateImageError;
-}
-
-if (duplicateByImage) {
-  console.log("⏭️ Samma källbild finns redan, sparar inte:", generatedArticle.title);
 
   return {
     success: true,
