@@ -104,7 +104,7 @@ async function generateArticle(
   article: Parser.Item
 ) {
 
-  const { data: existingArticle, error: existingArticleError } = await supabase
+  const { data: existingArticle, error: existingArticleError } = await supabaseAdmin
     .from("articles")
     .select("id")
     .eq("source_url", article.link)
