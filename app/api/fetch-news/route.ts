@@ -307,51 +307,56 @@ const generatedArticle = JSON.parse(cleaned);
 
 console.log("🎨 Genererar artikelbild från AI:ns imagePrompt...");
 
-
 console.log("=== AI JSON ===");
-
 console.log(generatedArticle);
-console.log("================"); 
-
-    console.log("🎨 Skapar och sparar egen AI-bild...");
-
-  const generatedImage = await generateImage(
-    generatedArticle.imagePrompt,
-    generatedArticle.slug
-  );
-
-  // Använd alltid vår egen AI-genererade bild som huvudbild.
-  generatedArticle.image = generatedImage.imageUrl;
-
-  // Ingen extern bildkälla används längre.
-  generatedArticle.source_image_url = null;
-
-  generatedArticle.source_url = article.link;
-generatedArticle.status = "draft";
-
-generatedArticle.reading_time = generatedArticle.readingTime;
-delete generatedArticle.readingTime;
+console.log("================");
 
 // Extra skydd mot dubbletter från olika RSS-flöden.
-const { data: duplicateByTitle, error: duplicateTitleError } = await supabaseAdmin
-  .from("articles")
-  .select("id, title")
-  .eq("title", generatedArticle.title)
-  .limit(1)
-  .maybeSingle();
+// Kontrollen sker INNAN bildgenereringen så att vi inte
+// skapar en bild till en artikel som ändå ska hoppas över.
+const { data: duplicateByTitle, error: duplicateTitleError } =
+  await supabaseAdmin
+    .from("articles")
+    .select("id, title")
+    .eq("title", generatedArticle.title)
+    .limit(1)
+    .maybeSingle();
 
 if (duplicateTitleError) {
   throw duplicateTitleError;
 }
 
 if (duplicateByTitle) {
-  console.log("⏭️ Samma titel finns redan, sparar inte:", generatedArticle.title);
+  console.log(
+    "⏭️ Samma titel finns redan, sparar inte:",
+    generatedArticle.title
+  );
 
   return {
     success: true,
     skipped: true,
   };
 }
+
+console.log("🎨 Skapar och sparar egen AI-bild...");
+
+const generatedImage = await generateImage(
+  generatedArticle.imagePrompt,
+  generatedArticle.slug
+);
+
+// Använd alltid vår egen AI-genererade bild som huvudbild.
+generatedArticle.image = generatedImage.imageUrl;
+generatedArticle.image_generated = true;
+
+// Ingen extern bildkälla används längre.
+generatedArticle.source_image_url = null;
+
+generatedArticle.source_url = article.link;
+generatedArticle.status = "draft";
+
+generatedArticle.reading_time = generatedArticle.readingTime;
+delete generatedArticle.readingTime;
 
 console.log("Sparar som UTKAST i Supabase...");
 
@@ -374,6 +379,72 @@ if (insertError) {
 
 
 
+async function repairOldArticleImages(maxRepairs = 3) {
+  console.log("🔧 Kontrollerar gamla artiklar som saknar AI-bild...");
+
+  const { data: articlesToRepair, error: repairQueryError } =
+    await supabaseAdmin
+      .from("articles")
+      .select("id, slug, imagePrompt, image, image_generated")
+      .or(
+        "image_generated.is.false,image_generated.is.null,image.is.null"
+      )
+      .not("imagePrompt", "is", null)
+      .limit(maxRepairs);
+
+  if (repairQueryError) {
+    throw repairQueryError;
+  }
+
+  if (!articlesToRepair || articlesToRepair.length === 0) {
+    console.log("✅ Inga gamla artiklar behöver bildreparation.");
+    return 0;
+  }
+
+  let repaired = 0;
+
+  for (const article of articlesToRepair) {
+    try {
+      if (!article.imagePrompt || !article.slug) {
+        continue;
+      }
+
+      console.log("🎨 Reparera bild för artikel:", article.id);
+
+      const generatedImage = await generateImage(
+        article.imagePrompt,
+        article.slug
+      );
+
+      const { error: updateError } = await supabaseAdmin
+        .from("articles")
+        .update({
+          image: generatedImage.imageUrl,
+          image_generated: true,
+          source_image_url: null,
+        })
+        .eq("id", article.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      repaired++;
+
+      console.log("✅ Gammal artikel fick ny AI-bild:", article.id);
+    } catch (error) {
+      console.error(
+        "❌ Kunde inte reparera bild för artikel:",
+        article.id
+      );
+      console.error(error);
+    }
+  }
+
+  return repaired;
+}
+
+
 export async function GET(request: Request) {
 const authHeader = request.headers.get("authorization");
 
@@ -392,10 +463,17 @@ if (
   try {
     console.log("Startar RSS-import...");
 
-let failed = 0;
-let processed = 0;
-let skipped = 0;
-const MAX_ARTICLES_PER_DAY = 5;
+
+    let failed = 0;
+    let processed = 0;
+    let skipped = 0;
+    const MAX_ARTICLES_PER_DAY = 5;
+
+    // Reparera upp till tre äldre artiklar med gamla/trasiga bilder.
+    // Detta räknas inte som nya artiklar mot dagens gräns.
+    const repairedImages = await repairOldArticleImages(3);
+
+    console.log("Reparerade gamla artikelbilder:", repairedImages);
 
 const startOfToday = new Date();
 startOfToday.setHours(0, 0, 0, 0);
@@ -418,6 +496,7 @@ if (remaining <= 0) {
     processed: 0,
     skipped: 0,
     failed: 0,
+    repairedImages,
     dailyLimit: MAX_ARTICLES_PER_DAY,
     remaining: 0,
   });
@@ -479,6 +558,7 @@ return Response.json({
   processed,
   skipped,
   failed,
+  repairedImages,
   dailyLimit: MAX_ARTICLES_PER_DAY,
   remaining,
 });
