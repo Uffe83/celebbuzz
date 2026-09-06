@@ -385,7 +385,7 @@ async function repairOldArticleImages(maxRepairs = 3) {
   const { data: articlesToRepair, error: repairQueryError } =
     await supabaseAdmin
       .from("articles")
-      .select("id, slug, imagePrompt, image, image_generated")
+      .select("id, slug, title, imagePrompt, image, image_generated")
       .or(
         "image_generated.is.false,image_generated.is.null,image.is.null"
       )
@@ -411,10 +411,12 @@ async function repairOldArticleImages(maxRepairs = 3) {
 
       console.log("🎨 Reparera bild för artikel:", article.id);
 
-      const generatedImage = await generateImage(
-        article.imagePrompt,
-        article.slug
-      );
+      const safeImagePrompt = `Editorial entertainment news image inspired by this article: "${article.title}". Create a realistic, tasteful editorial scene related to the topic. Do not depict any identifiable real person. No text, logos, trademarks, or watermarks.`;
+
+const generatedImage = await generateImage(
+  safeImagePrompt,
+  article.slug
+);
 
       const { error: updateError } = await supabaseAdmin
         .from("articles")
