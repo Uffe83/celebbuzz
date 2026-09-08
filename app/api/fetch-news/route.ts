@@ -385,14 +385,13 @@ async function repairOldArticleImages(maxRepairs = 3) {
   const { data: articlesToRepair, error: repairQueryError } =
     await supabaseAdmin
       .from("articles")
-      .select("id, slug, title, imagePrompt, image, image_generated")
-.eq("image_generated", false)
-.or(
-  `image.is.null,source_image_url.not.is.null,image.not.like.${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/article-images/%`
-)
+      .select(
+        "id, slug, title, imagePrompt, image, image_generated, source_image_url"
+      )
+      .eq("image_generated", false)
       .not("imagePrompt", "is", null)
       .order("id", { ascending: true })
-      .limit(maxRepairs);
+      .limit(20);
 
   if (repairQueryError) {
     throw repairQueryError;
@@ -403,9 +402,17 @@ async function repairOldArticleImages(maxRepairs = 3) {
     return 0;
   }
 
+  const repairCandidates = articlesToRepair
+    .filter(
+      (article) =>
+        !article.image ||
+        !article.image.includes("/storage/v1/object/public/article-images/")
+    )
+    .slice(0, maxRepairs);
+
   let repaired = 0;
 
-  for (const article of articlesToRepair) {
+  for (const article of repairCandidates) {
     try {
       if (!article.imagePrompt || !article.slug) {
         continue;
@@ -415,10 +422,10 @@ async function repairOldArticleImages(maxRepairs = 3) {
 
       const safeImagePrompt = `Editorial entertainment news image inspired by this article: "${article.title}". Create a realistic, tasteful editorial scene related to the topic. Do not depict any identifiable real person. No text, logos, trademarks, or watermarks.`;
 
-const generatedImage = await generateImage(
-  safeImagePrompt,
-  article.slug
-);
+      const generatedImage = await generateImage(
+        safeImagePrompt,
+        article.slug
+      );
 
       const { error: updateError } = await supabaseAdmin
         .from("articles")
