@@ -391,6 +391,7 @@ async function repairOldArticleImages(maxRepairs = 3) {
   `image.is.null,source_image_url.not.is.null,image.not.like.${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/article-images/%`
 )
       .not("imagePrompt", "is", null)
+      .order("id", { ascending: true })
       .limit(maxRepairs);
 
   if (repairQueryError) {
