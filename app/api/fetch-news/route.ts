@@ -386,9 +386,9 @@ async function repairOldArticleImages(maxRepairs = 3) {
     await supabaseAdmin
       .from("articles")
       .select("id, slug, title, imagePrompt, image, image_generated")
-      .or(
-        "image_generated.is.false,image_generated.is.null,image.is.null"
-      )
+.or(
+  "image_generated.is.false,image_generated.is.null,image.is.null"
+)
       .not("imagePrompt", "is", null)
       .limit(maxRepairs);
 
