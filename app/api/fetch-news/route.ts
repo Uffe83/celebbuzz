@@ -391,7 +391,7 @@ async function repairOldArticleImages(maxRepairs = 3) {
       .eq("image_generated", false)
       .not("imagePrompt", "is", null)
       .order("id", { ascending: true })
-      .limit(20);
+      .limit(1000);
 
   if (repairQueryError) {
     throw repairQueryError;
