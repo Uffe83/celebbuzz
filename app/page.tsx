@@ -63,7 +63,7 @@ const heroArticle = [...articles].sort(
             </span>
           </div>
 
-          <h2 className="mb-6 break-words text-4xl font-extrabold leading-none md:text-5xl lg:text-6xl">
+          <h2 className="mb-6 break-words text-4xl font-extrabold leading-none md:text-5xl lg:text-5xl xl:text-6xl">
             {heroArticle.title}
           </h2>
 
