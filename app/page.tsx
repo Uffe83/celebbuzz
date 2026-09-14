@@ -49,10 +49,10 @@ const heroArticle = [...articles].sort(
   <Link href={`/article/${heroArticle.slug}`}>
     <div className="rounded-3xl bg-zinc-900 p-16 transition hover:bg-zinc-800 cursor-pointer">
 
-      <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
+      <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
 
         {/* Vänster kolumn */}
-        <div>
+        <div className="min-w-0">
           <div className="mb-4 flex items-center gap-3">
             <span className="rounded-full bg-pink-500 px-3 py-1 text-xs font-bold uppercase text-white">
               BREAKING
@@ -63,7 +63,7 @@ const heroArticle = [...articles].sort(
             </span>
           </div>
 
-          <h2 className="mb-6 text-4xl lg:text-6xl xl:text-7xl font-extrabold leading-none">
+          <h2 className="mb-6 break-words text-4xl font-extrabold leading-none md:text-5xl lg:text-6xl">
             {heroArticle.title}
           </h2>
 
@@ -88,7 +88,7 @@ const heroArticle = [...articles].sort(
   width={1200}
   height={700}
   priority
-  className="h-[600px] w-full rounded-3xl object-cover shadow-2xl"
+  className="h-[500px] w-full rounded-3xl object-cover shadow-2xl"
 />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
