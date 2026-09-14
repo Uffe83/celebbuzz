@@ -9,6 +9,7 @@ export default async function Home() {
 const { data: articles, error } = await supabase
   .from("articles")
   .select("*")
+  .eq("status", "published")
   .order("created_at", { ascending: false });
   if (error) {
     console.error(error);
