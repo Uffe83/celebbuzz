@@ -47,7 +47,7 @@ const heroArticle = [...articles].sort(
 
 <section className="mx-auto max-w-7xl p-8">
   <Link href={`/article/${heroArticle.slug}`}>
-    <div className="rounded-3xl bg-zinc-900 p-16 transition hover:bg-zinc-800 cursor-pointer">
+    <div className="rounded-3xl bg-zinc-900 p-6 transition hover:bg-zinc-800 cursor-pointer md:p-16">
 
       <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
 
@@ -63,7 +63,7 @@ const heroArticle = [...articles].sort(
             </span>
           </div>
 
-          <h2 className="mb-6 break-words text-4xl font-extrabold leading-none tracking-tight md:text-4xl lg:text-4xl xl:text-4xl">
+          <h2 className="mb-6 break-words text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-4xl">
             {heroArticle.title}
           </h2>
 
