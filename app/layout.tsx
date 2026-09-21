@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -16,8 +17,16 @@ export const metadata: Metadata = {
   title: "CelebBuzz – Senaste nytt om film, TV, musik och kändisar",
   description:
     "CelebBuzz ger dig de senaste nyheterna inom film, TV, streaming, musik, kändisar och underhållning.",
+  openGraph: {
+    title: "CelebBuzz – Senaste nytt om film, TV, musik och kändisar",
+    description:
+      "CelebBuzz ger dig de senaste nyheterna inom film, TV, streaming, musik, kändisar och underhållning.",
+    url: "https://celebbuzz-six.vercel.app",
+    siteName: "CelebBuzz",
+    locale: "sv_SE",
+    type: "website",
+  },
 };
-
 
 export default function RootLayout({
   children,
